@@ -27,6 +27,8 @@
 #include <msckf_vio/math_utils.hpp>
 #include <msckf_vio/utils.h>
 
+#define do_logging
+
 using namespace std;
 using namespace Eigen;
 
@@ -178,6 +180,7 @@ bool MsckfVio::loadParameters() {
 
 bool MsckfVio::createRosIO() {
   odom_pub = nh.advertise<nav_msgs::Odometry>("odom", 10);
+  bias_pub = nh.advertise<geometry_msgs::Twist>("bias", 1);
   feature_pub = nh.advertise<sensor_msgs::PointCloud2>(
       "feature_point_cloud", 10);
 
@@ -371,53 +374,79 @@ void MsckfVio::featureCallback(
     state_server.imu_state.time = msg->header.stamp.toSec();
   }
 
-  static double max_processing_time = 0.0;
+  #ifdef do_logging
+  // static double max_processing_time = 0.0; //not used
   static int critical_time_cntr = 0;
   double processing_start_time = ros::Time::now().toSec();
 
   // Propogate the IMU state.
   // that are received before the image msg.
   ros::Time start_time = ros::Time::now();
+  #endif
   batchImuProcessing(msg->header.stamp.toSec());
+  #ifdef do_logging
   double imu_processing_time = (
       ros::Time::now()-start_time).toSec();
 
   // Augment the state vector.
   start_time = ros::Time::now();
+  #endif
   stateAugmentation(msg->header.stamp.toSec());
+  #ifdef do_logging
   double state_augmentation_time = (
       ros::Time::now()-start_time).toSec();
 
   // Add new observations for existing features or new
   // features in the map server.
   start_time = ros::Time::now();
+  #endif
   addFeatureObservations(msg);
+  #ifdef do_logging
   double add_observations_time = (
       ros::Time::now()-start_time).toSec();
 
   // Perform measurement update if necessary.
   start_time = ros::Time::now();
+  #endif
   removeLostFeatures();
+  #ifdef do_logging
   double remove_lost_features_time = (
       ros::Time::now()-start_time).toSec();
 
   start_time = ros::Time::now();
+  #endif
   pruneCamStateBuffer();
+  #ifdef do_logging
   double prune_cam_states_time = (
       ros::Time::now()-start_time).toSec();
 
   // Publish the odometry.
   start_time = ros::Time::now();
+  #endif
   publish(msg->header.stamp);
+  #ifdef do_logging
   double publish_time = (
       ros::Time::now()-start_time).toSec();
 
   // Reset the system if necessary.
+  start_time = ros::Time::now();
+  #endif
   onlineReset();
+  #ifdef do_logging
+  double onlineReset_time = (
+    ros::Time::now()-start_time).toSec();
 
   double processing_end_time = ros::Time::now().toSec();
   double processing_time =
     processing_end_time - processing_start_time;
+
+  std::ofstream timefile;
+  timefile.open ("timeLog.txt", std::ios_base::app);
+  timefile << processing_time << ' ' << imu_processing_time << ' ' << state_augmentation_time << ' ' <<
+     add_observations_time << ' ' << remove_lost_features_time << ' ' << prune_cam_states_time << ' ' <<
+     publish_time << ' ' << onlineReset_time << '\n';
+  timefile.close();
+
   if (processing_time > 1.0/frame_rate) {
     ++critical_time_cntr;
     ROS_INFO("\033[1;31mTotal processing time %f/%d...\033[0m",
@@ -435,6 +464,7 @@ void MsckfVio::featureCallback(
     //printf("Publish time: %f/%f\n",
     //    publish_time, publish_time/processing_time);
   }
+  #endif
 
   return;
 }
@@ -1421,6 +1451,17 @@ void MsckfVio::publish(const ros::Time& time) {
       odom_msg.twist.covariance[i*6+j] = P_body_vel(i, j);
 
   odom_pub.publish(odom_msg);
+
+  // Publish IMU biases
+  geometry_msgs::Twist bias_msg;
+  bias_msg.linear.x = state_server.imu_state.acc_bias[0];
+  bias_msg.linear.y = state_server.imu_state.acc_bias[1];
+  bias_msg.linear.z = state_server.imu_state.acc_bias[2];
+  bias_msg.angular.x = state_server.imu_state.gyro_bias[0];
+  bias_msg.angular.y = state_server.imu_state.gyro_bias[1];
+  bias_msg.angular.z = state_server.imu_state.gyro_bias[2];
+
+  bias_pub.publish(bias_msg);
 
   // Publish the 3D positions of the features that
   // has been initialized.

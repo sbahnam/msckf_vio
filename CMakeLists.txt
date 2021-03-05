@@ -29,7 +29,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3.2.0 REQUIRED)
 find_package(SuiteSparse REQUIRED)
 
 ##################
@@ -75,6 +75,47 @@ include_directories(
   ${SUITESPARSE_INCLUDE_DIRS}
 )
 
+# ActFast
+set(ActFast_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/state.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/include/std.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/include/message_pragmas.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_algebra.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_algebra_float.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_algebra_int.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_geodetic.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_geodetic_float.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_geodetic_int.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_orientation_conversion.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math/pprz_trig_int.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/v4l/v4l2.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/fast_rosten.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/image.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/lucas_kanade.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/fast_9.hpp
+
+        )
+
+set(ActFast_SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/act_fast.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/fast_rosten.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/image.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/lucas_kanade.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision/lib/vision/fast_9.cpp
+        )
+
+#LK_20 inverse compositional
+set(LK_20_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/LK20_ImageAlignment/src/LK20.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/LK20_ImageAlignment/src/LK20_stereo.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/LK20_ImageAlignment/src/LK20_stereoxy.hpp
+        )
+set(LK_20_SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/LK20_ImageAlignment/src/LK20.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/LK20_ImageAlignment/src/LK20_stereo.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/LK20_ImageAlignment/src/LK20_stereoxy.cpp
+        )
+
 # Msckf Vio
 add_library(msckf_vio
   src/msckf_vio.cpp
@@ -106,6 +147,8 @@ target_link_libraries(msckf_vio_nodelet
 add_library(image_processor
   src/image_processor.cpp
   src/utils.cpp
+  ${ActFast_SRC}
+  ${LK_20_SRC}
 )
 add_dependencies(image_processor
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
@@ -114,6 +157,11 @@ add_dependencies(image_processor
 target_link_libraries(image_processor
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/act_fast;
+  ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/include;
+  ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/math;
+  ${CMAKE_CURRENT_SOURCE_DIR}/act_fast/airborne/modules/computer_vision;
+  ${CMAKE_CURRENT_SOURCE_DIR}/LK20_ImageAlignment/src;
 )
 
 # Image processor nodelet
@@ -146,6 +194,8 @@ install(DIRECTORY include/${PROJECT_NAME}/
 )
 
 install(FILES nodelets.xml
+  ${ActFast_HEADERS}
+  ${LK_20_HEADERS}
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

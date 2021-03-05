@@ -1,0 +1,3 @@
+/home/stavrow/Git/LK20_ImageAlignment/build/CMakeFiles/rebuild_cache.dir
+/home/stavrow/Git/LK20_ImageAlignment/build/CMakeFiles/LK20_Tracker.dir
+/home/stavrow/Git/LK20_ImageAlignment/build/CMakeFiles/edit_cache.dir

@@ -17,10 +17,12 @@
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/Image.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
+
 
 namespace msckf_vio {
 
@@ -54,12 +56,58 @@ private:
   struct ProcessorConfig {
     int grid_row;
     int grid_col;
+    int border_height_margin;
+    int border_width_margin;
+    int free_features;
     int grid_min_feature_num;
     int grid_max_feature_num;
 
     int pyramid_levels;
+    int pyramid_scale;
     int patch_size;
     int fast_threshold;
+    bool detection_per_grid;
+
+    //not used
+    bool use_ActFAST;
+    float longstep;
+    float shortstep;
+    int gradientThreshold;
+    int gradientMethod;
+    int n_agents;
+    int n_time_steps;
+    bool use_local_stereo;
+    int local_stereo_width;
+    int local_stereo_height;
+    int local_stereo_pyramid;
+    int local_stereo_winsize;
+    double local_stereo_threshold;
+    bool use_local_tracker;
+    int local_tracker_pyramid;
+    int local_tracker_winsize;
+    int local_tracker_width;
+    int local_tracker_height;
+    bool use_bias_correction;
+
+    //LK INV params
+    bool use_LK_inv_tracker;
+    float error_threshold_tracker;
+    int tracker_win_height;
+    int tracker_win_width;
+    float tracker_track_precision;
+    int tracker_max_iteration;
+    float tracker_max_distance;
+    bool use_2pRANSAC;
+
+    bool use_LK_inv_stereoXY;
+    bool use_LK_inv_stereoX;
+    float error_threshold_stereo;
+    int stereo_win_height;
+    int stereo_win_width;
+    float stereo_track_precision;
+    int stereo_max_iteration;
+    float stereo_dx_prediction;
+
     int max_iteration;
     double track_precision;
     double ransac_threshold;
@@ -153,6 +201,13 @@ private:
    */
   void imuCallback(const sensor_msgs::ImuConstPtr& msg);
 
+    /*
+   * @brief biasCallback
+   *    Callback function for the bias calculated in msckf_vio.cpp.
+   * @param msg IMU bias.
+   */
+  void biasCallback(const geometry_msgs::Twist& msg);
+
   /*
    * @initializeFirstFrame
    *    Initialize the image processing sequence, which is
@@ -207,6 +262,9 @@ private:
    *    Create image pyramids used for klt tracking.
    */
   void createImagePyramids();
+
+  void GenerateImagePyramid(const cv::Mat& m_src, std::vector<cv::Mat>& dst_pyramid);
+  void ScaleDown(const cv::Mat& src, cv::Mat& dst);
 
   /*
    * @brief integrateImuData Integrates the IMU gyro readings
@@ -328,8 +386,17 @@ private:
   ProcessorConfig processor_config;
   cv::Ptr<cv::Feature2D> detector_ptr;
 
+  //LK inverse compositional
+  // LK20::LKTracker tracker_ptr;//(image, track_rect, level); //@todo this is not correct yet
+
   // IMU message buffer.
   std::vector<sensor_msgs::Imu> imu_msg_buffer;
+
+  // IMU Bias
+  // cv::Vec3f imu_angular_bias(0.f, 0.f, 0.f);
+  // cv::Vec3f imu_gyro_bias(0.f, 0.f, 0.f);
+  std::vector<double> imu_angular_bias = std::vector<double>(3, 0.0);
+  std::vector<double> imu_gyro_bias = std::vector<double>(3, 0.0);
 
   // Camera calibration parameters
   std::string cam0_distortion_model;
@@ -380,6 +447,7 @@ private:
   message_filters::TimeSynchronizer<
     sensor_msgs::Image, sensor_msgs::Image> stereo_sub;
   ros::Subscriber imu_sub;
+  ros::Subscriber bias_sub;
   ros::Publisher feature_pub;
   ros::Publisher tracking_info_pub;
   image_transport::Publisher debug_stereo_pub;

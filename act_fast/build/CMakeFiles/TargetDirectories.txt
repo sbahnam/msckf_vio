@@ -1,0 +1,3 @@
+/home/stavrow/Git/act_fast/build/CMakeFiles/rebuild_cache.dir
+/home/stavrow/Git/act_fast/build/CMakeFiles/ActFast.dir
+/home/stavrow/Git/act_fast/build/CMakeFiles/edit_cache.dir

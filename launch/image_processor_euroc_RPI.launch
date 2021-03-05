@@ -1,0 +1,101 @@
+<launch>
+
+  <arg name="robot" default="firefly_sbx"/>
+  <arg name="calibration_file"
+    default="$(find msckf_vio)/config/camchain-imucam-euroc.yaml"/>
+
+  <!-- Image Processor Nodelet  -->
+  <group ns="$(arg robot)">
+    <node pkg="nodelet" type="nodelet" name="image_processor"
+      args="standalone msckf_vio/ImageProcessorNodelet"
+      output="screen">
+
+      <rosparam command="load" file="$(arg calibration_file)"/>
+      <!-- Grid parameters -->
+      <param name="border_height_margin" value="0"/>
+      <param name="border_width_margin" value="0"/>
+      <param name="grid_row" value="3"/>
+      <param name="grid_col" value="4"/>
+      <param name="grid_min_feature_num" value="3"/>
+      <param name="grid_max_feature_num" value="4"/>
+      <param name="free_features" value="2"/>
+
+
+      <!-- OpenCV PyrLK parameters -->
+      <param name="pyramid_levels" value="4"/>
+      <param name="patch_size" value="15"/>
+      <param name="max_iteration" value="30"/> 
+      <param name="track_precision" value="0.01"/>
+
+      <param name="pyramid_scale" value="2"/>
+
+      <!-- Tracker Inverse Compositional PyrLK parameters -->
+      <param name="use_LK_inv_tracker" value="true"/>
+      <param name="use_2pRANSAC" value="false"/>
+      <param name="error_threshold_tracker" value="30"/>
+      <param name="tracker_win_height" value="9"/>
+      <param name="tracker_win_width" value="9"/>
+      <param name="tracker_track_precision" value="0.05"/>
+      <param name="tracker_max_iteration" value="15"/>
+      <param name="tracker_max_distance" value="9998"/>
+
+
+      <!-- Stereo Inverse Compositional PyrLK parameters -->
+      <param name="use_LK_inv_stereoXY" value="false"/>
+      <param name="use_LK_inv_stereoX" value="true"/>
+      <param name="error_threshold_stereo" value="30"/>
+      <param name="stereo_win_height" value="9"/>
+      <param name="stereo_win_width" value="9"/>
+      <param name="stereo_track_precision" value="0.05"/>
+      <param name="stereo_max_iteration" value="15"/>
+      <param name="stereo_dx_prediction" value="0"/>
+
+
+      <!-- Detection parameters -->
+      <param name="fast_threshold" value="10"/>
+      <param name="detection_per_grid" value="true"/>
+      
+      <!-- Stereo parameters -->
+      <param name="ransac_threshold" value="3"/>
+      <param name="stereo_threshold" value="5"/>
+      
+      
+      
+      <!-- Act FAST -->
+      <param name="use_ActFAST" value="false"/>
+      <param name="longstep" value="6.f"/>
+      <param name="shortstep" value="2.f"/>
+      <param name="gradientThreshold" value="30"/>
+      <param name="gradientMethod" value="0"/>
+      <param name="n_agents" value="512"/>
+      <param name="n_time_steps" value="30"/>
+
+
+
+      <!-- Local stereo -->
+      <param name="use_local_stereo" value="false"/>
+      <param name="local_stereo_width" value="40"/>
+      <param name="local_stereo_height" value="25"/>
+      <param name="local_stereo_pyramid" value="2"/>
+      <param name="local_stereo_winsize" value="5"/>
+      <param name="local_stereo_threshold" value="1e-3"/>
+
+      <!-- Local Tracker -->
+      <param name="use_local_tracker" value="false"/>
+      <param name="local_tracker_width" value="20"/>
+      <param name="local_tracker_height" value="20"/>
+      <param name="local_tracker_pyramid" value="2"/>
+      <param name="local_tracker_winsize" value="3"/>
+
+      <!-- Correct gyroscope bias -->
+      <param name="use_bias_correction" value="false"/>
+
+
+      <remap from="~imu" to="/imu0"/>
+      <remap from="~cam0_image" to="/cam0/image_raw"/>
+      <remap from="~cam1_image" to="/cam1/image_raw"/>
+
+    </node>
+  </group>
+
+</launch>
