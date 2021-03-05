@@ -8,6 +8,11 @@ The software is tested on Ubuntu 16.04 with ROS Kinetic.
 Video: [https://www.youtube.com/watch?v=jxfJFgzmNSw&t](https://www.youtube.com/watch?v=jxfJFgzmNSw&t=3s)<br/>
 Paper Draft: [https://arxiv.org/abs/1712.00036](https://arxiv.org/abs/1712.00036)
 
+## Modifications to MSCKF\_VIO in this forked repo
+In this forked repository we make S-MSCKF-VIO computationally more efficient by using a grid-based feature detector, implement the inverse LK instead of the regular LK and restrict stereo matching in the x-direction only. The increase of the computational efficiency allows the algorithm to get real-time VIO performance on the EuRoC dataset running it on a Raspberry Pi Zero W (processing frames at a rate of ~7Hz). The settings to run on the RPI can be found in image_processor_euroc.launch. Note, that the code can/need be further improved, because it is implemented for research purposes.
+I have done this research to obtain my Master of Science degree at Delft Universiry of Technology at the faculty of Aerospace Engineering. Therefore, I would like to thank Prof. Guido de Croon and PhD Sven Pfeiffer for guiding me during the master thesis.
+Feel free to send questions about the modifications to stavrowbahnam@gmail.com
+
 ## License
 
 Penn Software License. See LICENSE.txt for further details.
